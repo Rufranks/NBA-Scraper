@@ -1,0 +1,66 @@
+import pandas as pd
+from selenium import webdriver
+
+
+
+
+web = 'https://sports.tipico.de/en/all/basketball/usa/nba'
+path = '/Users/ruairifranks/Desktop/chromedriver'
+
+driver = webdriver.Chrome(path)
+driver.get(web)
+
+driver.maximize_window()
+
+cookies = driver.find_element_by_xpath('//*[@id="_evidon-accept-button"]')
+cookies.click()
+
+teams = []
+x12 = []
+odds_events = []
+hcap = []
+over_under = []
+
+sport_title = driver.find_elements_by_class_name('SportTitle-styles-sport')
+
+for sport in sport_title:
+    # selecting only football
+    if sport.text == 'Basketball':
+        parent = sport.find_element_by_xpath('./..')
+        grandparent = parent.find_element_by_xpath('./..')
+    single_row_events = grandparent.find_elements_by_class_name('EventRow-styles-event-row')
+    for match in single_row_events:
+        odds_event = match.find_elements_by_class_name('EventOddGroup-styles-odd-groups')
+        odds_events.append(odds_event)
+        # teams
+        for team in match.find_elements_by_class_name('EventTeams-styles-titles'):
+            teams.append(team.text)
+        # hcap
+        for cap in match.find_elements_by_class_name('EventOddGroup-styles-fixed-param-text'):
+            hcap.append(cap.text)
+    for odds_event in odds_events:
+        for n, box in enumerate(odds_event):
+            rows = box.find_elements_by_xpath('.//*')
+            if n == 0:
+                x12.append(rows[0].text)
+
+driver.quit()
+str = '\n'.join(teams)
+result = str.split('\n')
+str2 = '\n'.join(x12)
+result2 = str2.split('\n')
+str3 = ':'.join(hcap)
+result3 = str3.split(':')
+
+print(len(result))
+print(len(result2))
+print(len(result3))
+
+dict_gambling = {'Teams': result, 'ML': result2, 'Spread':result3}
+#Presenting data in dataframe
+df_gambling = pd.DataFrame.from_dict(dict_gambling, orient='index').T
+print(df_gambling)
+
+df_gambling.to_csv('NBA-odds.csv', index=False, header=True)
+
+
